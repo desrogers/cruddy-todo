@@ -29,10 +29,14 @@ exports.create = (text, callback) => {
 };
 
 exports.readAll = (callback) => {
-  var data = _.map(items, (text, id) => {
-    return { id, text };
+  fs.readdir(exports.dataDir, (err, items) => {
+    //console.log(items);
+    var data = _.map(items, fileName => {
+      let id = path.basename(fileName, '.txt');
+      return { id: id, text: id };
+    });
+    callback(null, data);
   });
-  callback(null, data);
 };
 
 exports.readOne = (id, callback) => {
