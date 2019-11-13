@@ -1,4 +1,6 @@
 const fs = require('fs');
+const Promiser = require('bluebird');
+Promiser.promisifyAll(fs);
 const path = require('path');
 const _ = require('underscore');
 const counter = require('./counter');
@@ -29,13 +31,34 @@ exports.create = (text, callback) => {
 };
 
 exports.readAll = (callback) => {
-  fs.readdir(exports.dataDir, (err, items) => {
-    var data = _.map(items, fileName => {
-      let id = path.basename(fileName, '.txt');
-      return { id: id, text: id };
+  // fs.readdir(exports.dataDir, (err, items) => {
+  //   var data = _.map(items, fileName => {
+  //     let id = path.basename(fileName, '.txt');
+  //     return { id: id, text: id };
+  //   });
+  //   callback(null, data);
+  // });
+
+  fs.readdirAsync(exports.dataDir).then((fileNames) => {
+    var ids = _.map(fileNames, fileName => {
+      return path.basename(fileName, '.txt');
     });
-    callback(null, data);
-  });
+
+    var texts = _.map(fileNames, fileName => {
+      return fs.readFileAsync(exports.dataDir + '/' + fileName, 'utf8');
+    });
+
+    Promise.all(texts).then((values) => {
+      let data = [];
+      console.log('texts inside:', values);
+      values.forEach((text, index) => {
+        data.push({id: ids[index], text: text});
+      });
+      return data;
+    }).then((data) => {
+      callback(null, data);
+    });
+  }).catch((err) => console.log(err));
 };
 
 exports.readOne = (id, callback) => {
